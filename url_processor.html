@@ -24,12 +24,16 @@
             var baseUrl = "https://www.hareruyamtg.com/decks/";
             var newBaseUrl = "https://yzq5oasewg.execute-api.ap-northeast-1.amazonaws.com/dev/vrcmtg/createdeck/";
 
+
+
             if (inputUrl.startsWith(baseUrl)) {
                 var remainingUrl = inputUrl.slice(baseUrl.length);
                 var newUrl = newBaseUrl + remainingUrl;
 
                 document.getElementById("status").innerHTML = "リクエスト送信中...";
-
+                document.getElementById("image").src = "";
+                document.getElementById("image").style.display = "none";
+                
                 fetch(newUrl)
                     .then(response => response.json())
                     .then(data => {
