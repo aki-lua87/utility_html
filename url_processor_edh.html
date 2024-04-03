@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>URL Processor with Image Display</title>
+</head>
+
+<body>
+
+    <h2>URL Input</h2>
+
+    <input type="text" id="urlInput" value="">
+    <button onclick="processURL()">Submit</button>
+    <p id="imageUrl"></p>
+    <button onclick="copyToClipboard()" style="display: none;">Copy Image URL</button>
+    <p id="status"></p>
+    <img id="image" src="" alt="Image will be displayed here" style="display: none;">
+
+
+    <script>
+        function processURL() {
+            var inputUrl = document.getElementById("urlInput").value;
+            var baseUrl = "https://www.hareruyamtg.com/decks/";
+            var newBaseUrl = "https://yzq5oasewg.execute-api.ap-northeast-1.amazonaws.com/dev/vrcedh/createdeck/";
+
+
+
+            if (inputUrl.startsWith(baseUrl)) {
+                var remainingUrl = inputUrl.slice(baseUrl.length);
+                var newUrl = newBaseUrl + remainingUrl;
+
+                document.getElementById("status").innerHTML = "リクエスト送信中...";
+                document.getElementById("image").src = "";
+                document.getElementById("image").style.display = "none";
+                
+                fetch(newUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById("status").innerHTML = "";
+                        document.getElementById("image").src = data.url;
+                        document.getElementById("image").style.display = "block";
+                        document.getElementById("imageUrl").innerHTML = data.url;
+                        document.querySelector("button[onclick='copyToClipboard()']").style.display = "block";
+                    });
+            }
+        }
+
+        function copyToClipboard() {
+            var imageUrl = document.getElementById("imageUrl").innerHTML;
+            navigator.clipboard.writeText(imageUrl);
+        }
+    </script>
+
+</body>
+
+</html>
