@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VRC Card Print</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111318;
+      --panel: #1a1e26;
+      --panel2: #222834;
+      --line: #343c4b;
+      --text: #f5f7fb;
+      --muted: #a9b1bf;
+      --accent: #78a9ff;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 20px 10px
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6
+    }
+
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 18px 20px 40px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .drop {
+      border: 2px dashed #4a5568;
+      border-radius: 12px;
+      min-height: 120px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 18px;
+      cursor: pointer;
+      transition: .15s;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .drop.drag {
+      border-color: var(--accent);
+      background: #18243a
+    }
+
+    .drop strong {
+      color: var(--text)
+    }
+
+    #fileInput {
+      display: none
+    }
+
+    .previewGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .boxTitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .canvasWrap {
+      background: #0b0d11;
+      border-radius: 12px;
+      overflow: auto;
+      min-height: 240px;
+      display: grid;
+      place-items: center;
+      padding: 8px;
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .controls {
+      display: grid;
+      gap: 14px
+    }
+
+    .group {
+      border-top: 1px solid var(--line);
+      padding-top: 14px
+    }
+
+    .group:first-child {
+      border-top: 0;
+      padding-top: 0
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 9px;
+      padding: 11px 14px;
+      background: var(--accent);
+      color: #07111f;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: var(--panel2);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed
+    }
+
+    .status {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+      white-space: pre-line
+    }
+
+    .hint {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--panel2);
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-size: 12px;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+
+    @media(max-width:980px) {
+      main {
+        grid-template-columns: 1fr
+      }
+
+      .previewGrid {
+        grid-template-columns: 1fr
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- <header>
+  <h1>VRC Card Print</h1>
+  <p>VRChatで撮ったカード画像を、縦いっぱいで自動切り抜きして、A4に3×3配置したPNGを生成するツール。処理はブラウザ内だけで完結するよ。</p>
+</header> -->
+
+  <main>
+    <section class="panel">
+      <div id="drop" class="drop">
+        <div>
+          <strong>画像をドラッグ＆ドロップ</strong><br>
+          またはクリックして選択<br>
+          <small>PNG / JPG / WebP・1枚だけ対応</small>
+        </div>
+      </div>
+      <input id="fileInput" type="file" accept="image/*">
+
+      <div class="previewGrid">
+        <div>
+          <div class="boxTitle">切り抜きプレビュー（63:88・縦いっぱい固定）</div>
+          <div class="canvasWrap">
+            <canvas id="cropPreview" width="900" height="900"></canvas>
+          </div>
+          <div class="hint">
+            アップロードした画像から、<span class="mono">63:88</span> の比率で「縦いっぱい」に自動切り抜きする。<br>
+            左右は中央基準で自動調整されるよ。
+          </div>
+        </div>
+
+        <div>
+          <div class="boxTitle">A4 3×3 シートプレビュー</div>
+          <div class="canvasWrap">
+            <canvas id="sheetPreview" width="744" height="1052"></canvas>
+          </div>
+          <div class="hint">
+            63×88mmのカードをA4へ3×3配置。<br>
+            横の間隔 <span class="mono">1mm</span>、縦の間隔 <span class="mono">1mm</span> 固定。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel controls">
+      <div class="group">
+        <div class="pill">カードサイズ: 63×88mm</div>
+        <div class="pill">配置: 3×3</div>
+        <div class="pill">余白: 横1mm / 縦1mm</div>
+        <div class="pill">出力: PNGのみ</div>
+      </div>
+
+      <div class="group">
+        <button id="generatePng" disabled>印刷用PNGを生成</button>
+        <div style="height:8px"></div>
+        <button id="downloadCrop" class="secondary" disabled>切り抜きPNGも保存</button>
+        <p class="hint">
+          印刷時は <strong>100% / 実際のサイズ</strong> にして、<strong>用紙に合わせる</strong> はOFF推奨。
+        </p>
+      </div>
+
+      <div class="group">
+        <div id="status" class="status">画像を1枚アップロードしてね。</div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    (() => {
+      const CARD_W_MM = 63;
+      const CARD_H_MM = 88;
+      const GAP_X_MM = 1;
+      const GAP_Y_MM = 1;
+      const COLS = 3;
+      const ROWS = 3;
+      const CARD_ASPECT = CARD_W_MM / CARD_H_MM;
+
+      const A4_W_MM = 210;
+      const A4_H_MM = 297;
+
+      // 300dpi
+      const A4_PX_W = 2480;
+      const A4_PX_H = 3508;
+      const PX_PER_MM = 300 / 25.4;
+
+      const drop = document.getElementById('drop');
+      const fileInput = document.getElementById('fileInput');
+      const cropCanvas = document.getElementById('cropPreview');
+      const cropCtx = cropCanvas.getContext('2d');
+      const sheetCanvas = document.getElementById('sheetPreview');
+      const sheetCtx = sheetCanvas.getContext('2d');
+      const generatePng = document.getElementById('generatePng');
+      const downloadCrop = document.getElementById('downloadCrop');
+      const status = document.getElementById('status');
+
+      let item = null;
+
+      function mmToPx(mm) { return Math.round(mm * PX_PER_MM); }
+
+      function getLayout() {
+        const gridW = CARD_W_MM * COLS + GAP_X_MM * (COLS - 1);
+        const gridH = CARD_H_MM * ROWS + GAP_Y_MM * (ROWS - 1);
+        const startX = (A4_W_MM - gridW) / 2;
+        const startY = (A4_H_MM - gridH) / 2;
+        return { gridW, gridH, startX, startY };
+      }
+
+      function verticalFullCrop(img) {
+        let h = img.height;
+        let w = h * CARD_ASPECT;
+
+        if (w > img.width) {
+          w = img.width;
+          h = w / CARD_ASPECT;
+        }
+
+        return {
+          x: (img.width - w) / 2,
+          y: (img.height - h) / 2,
+          w, h
+        };
+      }
+
+      function loadFile(file) {
+        if (!file || !file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            item = {
+              file,
+              img,
+              crop: verticalFullCrop(img)
+            };
+            updateAll();
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function drawCropPreview() {
+        cropCtx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
+        cropCtx.fillStyle = '#0b0d11';
+        cropCtx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
+
+        if (!item) {
+          cropCtx.fillStyle = '#7f8897';
+          cropCtx.textAlign = 'center';
+          cropCtx.font = '22px system-ui';
+          cropCtx.fillText('切り抜きプレビュー', cropCanvas.width / 2, cropCanvas.height / 2);
+          return;
+        }
+
+        const img = item.img;
+        const crop = item.crop;
+
+        const pad = 24;
+        const scale = Math.min(
+          (cropCanvas.width - pad * 2) / img.width,
+          (cropCanvas.height - pad * 2) / img.height
+        );
+        const dw = img.width * scale;
+        const dh = img.height * scale;
+        const ox = (cropCanvas.width - dw) / 2;
+        const oy = (cropCanvas.height - dh) / 2;
+
+        cropCtx.drawImage(img, ox, oy, dw, dh);
+
+        const rx = ox + crop.x * scale;
+        const ry = oy + crop.y * scale;
+        const rw = crop.w * scale;
+        const rh = crop.h * scale;
+
+        cropCtx.save();
+        cropCtx.fillStyle = 'rgba(0,0,0,0.45)';
+        cropCtx.fillRect(ox, oy, dw, dh);
+        cropCtx.clearRect(rx, ry, rw, rh);
+        cropCtx.drawImage(img, crop.x, crop.y, crop.w, crop.h, rx, ry, rw, rh);
+        cropCtx.restore();
+
+        cropCtx.strokeStyle = '#63a8ff';
+        cropCtx.lineWidth = 3;
+        cropCtx.strokeRect(rx, ry, rw, rh);
+      }
+
+      function getCroppedCanvas(outW = 900, outH = Math.round(900 / CARD_ASPECT)) {
+        const c = document.createElement('canvas');
+        c.width = outW;
+        c.height = outH;
+        const cx = c.getContext('2d');
+        cx.imageSmoothingEnabled = true;
+        cx.imageSmoothingQuality = 'high';
+
+        if (!item) return c;
+
+        cx.drawImage(
+          item.img,
+          item.crop.x, item.crop.y, item.crop.w, item.crop.h,
+          0, 0, outW, outH
+        );
+        return c;
+      }
+
+      function renderSheetCanvasFull() {
+        const layout = getLayout();
+        const sheet = document.createElement('canvas');
+        sheet.width = A4_PX_W;
+        sheet.height = A4_PX_H;
+        const sctx = sheet.getContext('2d');
+
+        sctx.fillStyle = '#ffffff';
+        sctx.fillRect(0, 0, sheet.width, sheet.height);
+
+        if (!item) return sheet;
+
+        sctx.imageSmoothingEnabled = true;
+        sctx.imageSmoothingQuality = 'high';
+
+        const cardPxW = mmToPx(CARD_W_MM);
+        const cardPxH = mmToPx(CARD_H_MM);
+        const gapPxX = mmToPx(GAP_X_MM);
+        const gapPxY = mmToPx(GAP_Y_MM);
+        const startPxX = Math.round(layout.startX * PX_PER_MM);
+        const startPxY = Math.round(layout.startY * PX_PER_MM);
+
+        const cropped = getCroppedCanvas(cardPxW, cardPxH);
+
+        for (let row = 0; row < ROWS; row++) {
+          for (let col = 0; col < COLS; col++) {
+            const x = startPxX + col * (cardPxW + gapPxX);
+            const y = startPxY + row * (cardPxH + gapPxY);
+            sctx.drawImage(cropped, x, y);
+
+            sctx.strokeStyle = 'rgba(160,160,160,0.85)';
+            sctx.lineWidth = 1;
+            sctx.strokeRect(x + 0.5, y + 0.5, cardPxW - 1, cardPxH - 1);
+          }
+        }
+
+        return sheet;
+      }
+
+      function drawSheetPreview() {
+        sheetCtx.clearRect(0, 0, sheetCanvas.width, sheetCanvas.height);
+        sheetCtx.fillStyle = '#0b0d11';
+        sheetCtx.fillRect(0, 0, sheetCanvas.width, sheetCanvas.height);
+
+        if (!item) {
+          sheetCtx.fillStyle = '#7f8897';
+          sheetCtx.textAlign = 'center';
+          sheetCtx.font = '22px system-ui';
+          sheetCtx.fillText('A4シートプレビュー', sheetCanvas.width / 2, sheetCanvas.height / 2);
+          return;
+        }
+
+        const full = renderSheetCanvasFull();
+
+        sheetCtx.imageSmoothingEnabled = true;
+        sheetCtx.imageSmoothingQuality = 'high';
+        sheetCtx.drawImage(full, 0, 0, sheetCanvas.width, sheetCanvas.height);
+      }
+
+      function updateStatus() {
+        if (!item) {
+          status.textContent = '画像を1枚アップロードしてね。';
+          generatePng.disabled = true;
+          downloadCrop.disabled = true;
+          return;
+        }
+
+        const crop = item.crop;
+        status.textContent =
+          `読み込み済み: ${item.file.name}
+元画像: ${item.img.width} × ${item.img.height}px
+切り抜き: ${Math.round(crop.w)} × ${Math.round(crop.h)}px
+出力: A4 / 300dpi / 3×3 / gap 1mm`;
+        generatePng.disabled = false;
+        downloadCrop.disabled = false;
+      }
+
+      function updateAll() {
+        updateStatus();
+        drawCropPreview();
+        drawSheetPreview();
+      }
+
+      generatePng.addEventListener('click', () => {
+        if (!item) return;
+        const sheet = renderSheetCanvasFull();
+        const a = document.createElement('a');
+        a.href = sheet.toDataURL('image/png');
+        a.download = 'vrc-card-a4-sheet.png';
+        a.click();
+      });
+
+      downloadCrop.addEventListener('click', () => {
+        if (!item) return;
+        const c = getCroppedCanvas(1500, Math.round(1500 / CARD_ASPECT));
+        const a = document.createElement('a');
+        a.href = c.toDataURL('image/png');
+        a.download = (item.file.name.replace(/\.[^.]+$/, '') || 'card') + '_crop.png';
+        a.click();
+      });
+
+      drop.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files[0];
+        if (file) loadFile(file);
+      });
+
+      ['dragenter', 'dragover'].forEach(type => {
+        drop.addEventListener(type, e => {
+          e.preventDefault();
+          drop.classList.add('drag');
+        });
+      });
+
+      ['dragleave', 'drop'].forEach(type => {
+        drop.addEventListener(type, e => {
+          e.preventDefault();
+          drop.classList.remove('drag');
+        });
+      });
+
+      drop.addEventListener('drop', e => {
+        const file = e.dataTransfer.files[0];
+        if (file) loadFile(file);
+      });
+
+      updateAll();
+    })();
+  </script>
+</body>
+
+</html>
