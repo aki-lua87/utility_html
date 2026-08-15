@@ -199,10 +199,10 @@
 </head>
 
 <body>
-  <!-- <header>
-  <h1>VRC Card Print</h1>
-  <p>VRChatで撮ったカード画像を、縦いっぱいで自動切り抜きして、A4に3×3配置したPNGを生成するツール。処理はブラウザ内だけで完結するよ。</p>
-</header> -->
+  <header>
+    <h1>VRC Card Print</h1>
+    <p>VRChatで撮ったカード画像を、縦いっぱいで自動切り抜きして、A4に3×3配置した印刷用データを生成するツール。ブラウザ内で処理して、PNGまたはPDFを出力できるよ。</p>
+  </header>
 
   <main>
     <section class="panel">
@@ -223,18 +223,18 @@
           </div>
           <div class="hint">
             アップロードした画像から、<span class="mono">63:88</span> の比率で「縦いっぱい」に自動切り抜きする。<br>
-            左右は中央基準で自動調整されるよ。
+            左右は中央基準で自動調整。
           </div>
         </div>
 
         <div>
-          <div class="boxTitle">A4 3×3 シートプレビュー</div>
+          <div class="boxTitle">A4 3×3 シートプレビュー（10mm確認線つき）</div>
           <div class="canvasWrap">
             <canvas id="sheetPreview" width="744" height="1052"></canvas>
           </div>
           <div class="hint">
-            63×88mmのカードをA4へ3×3配置。<br>
-            横の間隔 <span class="mono">1mm</span>、縦の間隔 <span class="mono">1mm</span> 固定。
+            63×88mmのカードをA4へ3×3配置。横1mm・縦1mmの間隔固定。<br>
+            下部に <span class="mono">10mm</span> の確認用スケールを付ける。
           </div>
         </div>
       </div>
@@ -245,15 +245,18 @@
         <div class="pill">カードサイズ: 63×88mm</div>
         <div class="pill">配置: 3×3</div>
         <div class="pill">余白: 横1mm / 縦1mm</div>
-        <div class="pill">出力: PNGのみ</div>
+        <div class="pill">確認線: 10mm</div>
       </div>
 
       <div class="group">
-        <button id="generatePng" disabled>印刷用PNGを生成</button>
+        <button id="generatePdf" disabled>A4シートPDFを生成</button>
+        <div style="height:8px"></div>
+        <button id="generatePng" class="secondary" disabled>A4シートPNGを生成</button>
         <div style="height:8px"></div>
         <button id="downloadCrop" class="secondary" disabled>切り抜きPNGも保存</button>
         <p class="hint">
-          印刷時は <strong>100% / 実際のサイズ</strong> にして、<strong>用紙に合わせる</strong> はOFF推奨。
+          印刷時は <strong>100% / 実際のサイズ</strong> にして、<strong>用紙に合わせる</strong> はOFF推奨。<br>
+          ネットワークプリント前提ならまずは <strong>PDF</strong> が安全。
         </p>
       </div>
 
@@ -263,6 +266,7 @@
     </aside>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script>
     (() => {
       const CARD_W_MM = 63;
@@ -276,10 +280,14 @@
       const A4_W_MM = 210;
       const A4_H_MM = 297;
 
-      // 300dpi
       const A4_PX_W = 2480;
       const A4_PX_H = 3508;
       const PX_PER_MM = 300 / 25.4;
+
+      const SCALE_LEN_MM = 10;
+      const SCALE_X_MM = (A4_W_MM - SCALE_LEN_MM) / 2;
+      const SCALE_Y_MM = 287;
+      const SCALE_TICK_MM = 2;
 
       const drop = document.getElementById('drop');
       const fileInput = document.getElementById('fileInput');
@@ -287,6 +295,7 @@
       const cropCtx = cropCanvas.getContext('2d');
       const sheetCanvas = document.getElementById('sheetPreview');
       const sheetCtx = sheetCanvas.getContext('2d');
+      const generatePdf = document.getElementById('generatePdf');
       const generatePng = document.getElementById('generatePng');
       const downloadCrop = document.getElementById('downloadCrop');
       const status = document.getElementById('status');
@@ -325,11 +334,7 @@
         reader.onload = () => {
           const img = new Image();
           img.onload = () => {
-            item = {
-              file,
-              img,
-              crop: verticalFullCrop(img)
-            };
+            item = { file, img, crop: verticalFullCrop(img) };
             updateAll();
           };
           img.src = reader.result;
@@ -400,6 +405,32 @@
         return c;
       }
 
+      function drawScaleOnCanvas(ctx) {
+        const x1 = mmToPx(SCALE_X_MM);
+        const x2 = mmToPx(SCALE_X_MM + SCALE_LEN_MM);
+        const y = mmToPx(SCALE_Y_MM);
+        const tick = mmToPx(SCALE_TICK_MM);
+
+        ctx.save();
+        ctx.strokeStyle = '#000';
+        ctx.fillStyle = '#000';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x1, y);
+        ctx.lineTo(x2, y);
+        ctx.moveTo(x1, y - tick);
+        ctx.lineTo(x1, y + tick);
+        ctx.moveTo(x2, y - tick);
+        ctx.lineTo(x2, y + tick);
+        ctx.stroke();
+
+        ctx.font = '28px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('10 mm', (x1 + x2) / 2, y - tick - 8);
+        ctx.restore();
+      }
+
       function renderSheetCanvasFull() {
         const layout = getLayout();
         const sheet = document.createElement('canvas');
@@ -436,6 +467,7 @@
           }
         }
 
+        drawScaleOnCanvas(sctx);
         return sheet;
       }
 
@@ -453,7 +485,6 @@
         }
 
         const full = renderSheetCanvasFull();
-
         sheetCtx.imageSmoothingEnabled = true;
         sheetCtx.imageSmoothingQuality = 'high';
         sheetCtx.drawImage(full, 0, 0, sheetCanvas.width, sheetCanvas.height);
@@ -463,6 +494,7 @@
         if (!item) {
           status.textContent = '画像を1枚アップロードしてね。';
           generatePng.disabled = true;
+          generatePdf.disabled = true;
           downloadCrop.disabled = true;
           return;
         }
@@ -472,8 +504,9 @@
           `読み込み済み: ${item.file.name}
 元画像: ${item.img.width} × ${item.img.height}px
 切り抜き: ${Math.round(crop.w)} × ${Math.round(crop.h)}px
-出力: A4 / 300dpi / 3×3 / gap 1mm`;
+出力: A4 / 3×3 / gap 1mm / 10mm確認線つき`;
         generatePng.disabled = false;
+        generatePdf.disabled = false;
         downloadCrop.disabled = false;
       }
 
@@ -490,6 +523,43 @@
         a.href = sheet.toDataURL('image/png');
         a.download = 'vrc-card-a4-sheet.png';
         a.click();
+      });
+
+      generatePdf.addEventListener('click', () => {
+        if (!item) return;
+        if (!window.jspdf) {
+          alert('PDFライブラリを読み込めなかったよ。ネット接続を確認してね。');
+          return;
+        }
+
+        const layout = getLayout();
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+        const data = getCroppedCanvas(900, Math.round(900 / CARD_ASPECT)).toDataURL('image/png');
+
+        for (let row = 0; row < ROWS; row++) {
+          for (let col = 0; col < COLS; col++) {
+            const x = layout.startX + col * (CARD_W_MM + GAP_X_MM);
+            const y = layout.startY + row * (CARD_H_MM + GAP_Y_MM);
+            pdf.addImage(data, 'PNG', x, y, CARD_W_MM, CARD_H_MM, undefined, 'FAST');
+
+            pdf.setDrawColor(170, 170, 170);
+            pdf.setLineWidth(0.1);
+            pdf.rect(x, y, CARD_W_MM, CARD_H_MM);
+          }
+        }
+
+        pdf.setDrawColor(0, 0, 0);
+        pdf.setTextColor(0, 0, 0);
+        pdf.setLineWidth(0.35);
+        pdf.line(SCALE_X_MM, SCALE_Y_MM, SCALE_X_MM + SCALE_LEN_MM, SCALE_Y_MM);
+        pdf.line(SCALE_X_MM, SCALE_Y_MM - SCALE_TICK_MM, SCALE_X_MM, SCALE_Y_MM + SCALE_TICK_MM);
+        pdf.line(SCALE_X_MM + SCALE_LEN_MM, SCALE_Y_MM - SCALE_TICK_MM, SCALE_X_MM + SCALE_LEN_MM, SCALE_Y_MM + SCALE_TICK_MM);
+        pdf.setFontSize(10);
+        pdf.text('10 mm', SCALE_X_MM + SCALE_LEN_MM / 2, SCALE_Y_MM - 2.5, { align: 'center' });
+
+        pdf.save('vrc-card-a4-sheet.pdf');
       });
 
       downloadCrop.addEventListener('click', () => {
