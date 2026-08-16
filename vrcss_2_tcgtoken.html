@@ -15,39 +15,45 @@
       --text: #f5f7fb;
       --muted: #a9b1bf;
       --accent: #78a9ff;
+      --danger: #ff8a8a;
     }
 
     * {
-      box-sizing: border-box
+      box-sizing: border-box;
     }
 
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
       background: var(--bg);
       color: var(--text);
     }
 
     header {
       max-width: 1280px;
-      margin: 0 auto;
-      padding: 28px 20px 10px
+      margin: auto;
+      padding: 28px 20px 10px;
     }
 
     h1 {
       margin: 0 0 8px;
-      font-size: 28px
+      font-size: 28px;
     }
 
     header p {
       margin: 0;
       color: var(--muted);
-      line-height: 1.6
+      line-height: 1.6;
     }
 
     main {
       max-width: 1280px;
-      margin: 0 auto;
+      margin: auto;
       padding: 18px 20px 40px;
       display: grid;
       grid-template-columns: minmax(0, 1fr) 360px;
@@ -70,22 +76,93 @@
       text-align: center;
       padding: 18px;
       cursor: pointer;
-      transition: .15s;
+      transition: 0.15s;
       color: var(--muted);
       margin-bottom: 16px;
     }
 
     .drop.drag {
       border-color: var(--accent);
-      background: #18243a
+      background: #18243a;
     }
 
     .drop strong {
-      color: var(--text)
+      color: var(--text);
     }
 
     #fileInput {
-      display: none
+      display: none;
+    }
+
+    .imageList {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .imageItem {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel2);
+      cursor: pointer;
+    }
+
+    .imageItem.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent) inset;
+    }
+
+    .thumbnail {
+      width: 52px;
+      height: 52px;
+      object-fit: cover;
+      border-radius: 7px;
+      background: #0b0d11;
+    }
+
+    .imageName {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
+    .stepper {
+      display: grid;
+      grid-template-columns: 32px 32px 32px;
+      align-items: center;
+      text-align: center;
+    }
+
+    .stepper button,
+    .removeButton {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border-radius: 7px;
+      background: #303848;
+      color: var(--text);
+      border: 1px solid #465166;
+    }
+
+    .stepper button {
+      font-size: 18px;
+    }
+
+    .stepper span {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .removeButton {
+      color: var(--danger);
+      font-size: 18px;
     }
 
     .previewGrid {
@@ -121,17 +198,17 @@
 
     .controls {
       display: grid;
-      gap: 14px
+      gap: 14px;
     }
 
     .group {
       border-top: 1px solid var(--line);
-      padding-top: 14px
+      padding-top: 14px;
     }
 
     .group:first-child {
       border-top: 0;
-      padding-top: 0
+      padding-top: 0;
     }
 
     button {
@@ -152,26 +229,26 @@
     }
 
     button:disabled {
-      opacity: .45;
-      cursor: not-allowed
+      opacity: 0.45;
+      cursor: not-allowed;
     }
 
     .status {
       font-size: 13px;
       color: var(--muted);
       line-height: 1.7;
-      white-space: pre-line
+      white-space: pre-line;
     }
 
     .hint {
       margin-top: 10px;
       color: var(--muted);
       font-size: 12px;
-      line-height: 1.55
+      line-height: 1.55;
     }
 
     .mono {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
 
     .pill {
@@ -182,17 +259,37 @@
       border: 1px solid var(--line);
       color: var(--text);
       font-size: 12px;
-      margin-right: 6px;
-      margin-bottom: 6px;
+      margin: 0 6px 6px 0;
     }
 
-    @media(max-width:980px) {
+    @media (max-width: 980px) {
       main {
-        grid-template-columns: 1fr
+        grid-template-columns: 1fr;
       }
 
       .previewGrid {
-        grid-template-columns: 1fr
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .imageItem {
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+      }
+
+      .thumbnail {
+        width: 44px;
+        height: 44px;
+      }
+
+      .stepper {
+        grid-column: 2;
+        justify-content: start;
+      }
+
+      .removeButton {
+        grid-column: 3;
+        grid-row: 1/3;
       }
     }
   </style>
@@ -201,219 +298,363 @@
 <body>
   <header>
     <h1>VRC Card Print</h1>
-    <p>VRChatで撮ったカード画像を、縦いっぱいで自動切り抜きして、A4に3×3配置した印刷用データを生成するツール。ブラウザ内で処理して、PNGまたはPDFを出力できるよ。</p>
+    <p>
+      カード用のスクリーンショットを、縦長比率に自動で切り抜き、A4に最大9枚配置した印刷データを作るツールです。
+    </p>
   </header>
-
   <main>
     <section class="panel">
       <div id="drop" class="drop">
         <div>
-          <strong>画像をドラッグ＆ドロップ</strong><br>
-          またはクリックして選択<br>
-          <small>PNG / JPG / WebP・1枚だけ対応</small>
+          <strong>画像をドラッグ＆ドロップ</strong><br />またはクリックして複数選択<br /><small>PNG / JPG / WebP・合計9枚まで印刷できます</small>
         </div>
       </div>
-      <input id="fileInput" type="file" accept="image/*">
-
+      <input id="fileInput" type="file" accept="image/*" multiple />
+      <div id="imageList" class="imageList" aria-label="印刷する画像の一覧"></div>
       <div class="previewGrid">
         <div>
-          <div class="boxTitle">切り抜きプレビュー（63:88・縦いっぱい固定）</div>
+          <div class="boxTitle">
+            選択画像の切り抜きプレビュー（63:88・中央基準）
+          </div>
           <div class="canvasWrap">
             <canvas id="cropPreview" width="900" height="900"></canvas>
           </div>
           <div class="hint">
-            アップロードした画像から、<span class="mono">63:88</span> の比率で「縦いっぱい」に自動切り抜きする。<br>
-            左右は中央基準で自動調整。
+            選択中の画像を
+            <span class="mono">63:88</span>
+            の比率で中央から自動切り抜きします。<br />一覧の画像をクリックするとプレビューを切り替えられます。
           </div>
         </div>
-
         <div>
-          <div class="boxTitle">A4 3×3 シートプレビュー（10mm確認線つき）</div>
+          <div class="boxTitle">
+            A4 3×3 シートプレビュー（10mm確認線つき）
+          </div>
           <div class="canvasWrap">
             <canvas id="sheetPreview" width="744" height="1052"></canvas>
           </div>
           <div class="hint">
-            63×88mmのカードをA4へ3×3配置。横1mm・縦1mmの間隔固定。<br>
-            下部に <span class="mono">10mm</span> の確認用スケールを付ける。
+            63×88mmのカードをA4へ最大3×3配置。横1mm・縦1mmの間隔です。<br />下部に
+            <span class="mono">10mm</span> の印刷サイズ確認線を付けます。
           </div>
         </div>
       </div>
     </section>
-
     <aside class="panel controls">
-      <div class="group">
+      <!-- <div class="group">
         <div class="pill">カードサイズ: 63×88mm</div>
-        <div class="pill">配置: 3×3</div>
+        <div class="pill">配置: 最大3×3</div>
         <div class="pill">余白: 横1mm / 縦1mm</div>
         <div class="pill">確認線: 10mm</div>
-      </div>
-
+      </div> -->
       <div class="group">
-        <button id="generatePdf" disabled>A4シートPDFを生成</button>
-        <div style="height:8px"></div>
-        <button id="generatePng" class="secondary" disabled>A4シートPNGを生成</button>
-        <div style="height:8px"></div>
-        <button id="downloadCrop" class="secondary" disabled>切り抜きPNGも保存</button>
+        <button id="generatePdf" disabled>PDFを生成(推奨)</button>
+        <div style="height: 8px"></div>
+        <button id="generatePng" class="secondary" disabled>
+          PNGを生成
+        </button>
+        <div style="height: 8px"></div>
+        <button id="downloadCrop" class="secondary" disabled>
+          選択画像の切り抜きを保存
+        </button>
         <p class="hint">
-          印刷時は <strong>100% / 実際のサイズ</strong> にして、<strong>用紙に合わせる</strong> はOFF推奨。<br>
-          ネットワークプリント前提ならまずは <strong>PDF</strong> が安全。
+          印刷時は <strong>100% / 実際のサイズ</strong> にして、<strong>用紙に合わせる</strong> 等の設定は
+          はOFF推奨です。<br />
+          <strong>PDF</strong> での印刷を推奨しております。 </br>
+          カードサイズは 63×88mm を前提としております。
         </p>
       </div>
-
       <div class="group">
-        <div id="status" class="status">画像を1枚アップロードしてね。</div>
+        <div id="status" class="status">画像を追加してください。</div>
       </div>
     </aside>
   </main>
-
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script>
     (() => {
-      const CARD_W_MM = 63;
-      const CARD_H_MM = 88;
-      const GAP_X_MM = 1;
-      const GAP_Y_MM = 1;
-      const COLS = 3;
-      const ROWS = 3;
-      const CARD_ASPECT = CARD_W_MM / CARD_H_MM;
+      const CARD_W_MM = 63,
+        CARD_H_MM = 88,
+        GAP_X_MM = 1,
+        GAP_Y_MM = 1,
+        COLS = 3,
+        ROWS = 3;
+      const MAX_CARDS = COLS * ROWS,
+        CARD_ASPECT = CARD_W_MM / CARD_H_MM;
+      const A4_W_MM = 210,
+        A4_H_MM = 297,
+        A4_PX_W = 2480,
+        A4_PX_H = 3508,
+        PX_PER_MM = 300 / 25.4;
+      const SCALE_LEN_MM = 10,
+        SCALE_X_MM = (A4_W_MM - SCALE_LEN_MM) / 2,
+        SCALE_Y_MM = 287,
+        SCALE_TICK_MM = 2;
+      const drop = document.getElementById("drop"),
+        fileInput = document.getElementById("fileInput"),
+        imageList = document.getElementById("imageList");
+      const cropCanvas = document.getElementById("cropPreview"),
+        cropCtx = cropCanvas.getContext("2d");
+      const sheetCanvas = document.getElementById("sheetPreview"),
+        sheetCtx = sheetCanvas.getContext("2d");
+      const generatePdf = document.getElementById("generatePdf"),
+        generatePng = document.getElementById("generatePng"),
+        downloadCrop = document.getElementById("downloadCrop"),
+        status = document.getElementById("status");
+      let items = [],
+        selectedIndex = -1,
+        notice = "";
 
-      const A4_W_MM = 210;
-      const A4_H_MM = 297;
-
-      const A4_PX_W = 2480;
-      const A4_PX_H = 3508;
-      const PX_PER_MM = 300 / 25.4;
-
-      const SCALE_LEN_MM = 10;
-      const SCALE_X_MM = (A4_W_MM - SCALE_LEN_MM) / 2;
-      const SCALE_Y_MM = 287;
-      const SCALE_TICK_MM = 2;
-
-      const drop = document.getElementById('drop');
-      const fileInput = document.getElementById('fileInput');
-      const cropCanvas = document.getElementById('cropPreview');
-      const cropCtx = cropCanvas.getContext('2d');
-      const sheetCanvas = document.getElementById('sheetPreview');
-      const sheetCtx = sheetCanvas.getContext('2d');
-      const generatePdf = document.getElementById('generatePdf');
-      const generatePng = document.getElementById('generatePng');
-      const downloadCrop = document.getElementById('downloadCrop');
-      const status = document.getElementById('status');
-
-      let item = null;
-
-      function mmToPx(mm) { return Math.round(mm * PX_PER_MM); }
-
-      function getLayout() {
-        const gridW = CARD_W_MM * COLS + GAP_X_MM * (COLS - 1);
-        const gridH = CARD_H_MM * ROWS + GAP_Y_MM * (ROWS - 1);
-        const startX = (A4_W_MM - gridW) / 2;
-        const startY = (A4_H_MM - gridH) / 2;
-        return { gridW, gridH, startX, startY };
-      }
+      const mmToPx = (mm) => Math.round(mm * PX_PER_MM);
+      const totalCount = () =>
+        items.reduce((sum, item) => sum + item.count, 0);
+      const selectedItem = () => items[selectedIndex] || null;
+      const getLayout = () => {
+        const gridW = CARD_W_MM * COLS + GAP_X_MM * (COLS - 1),
+          gridH = CARD_H_MM * ROWS + GAP_Y_MM * (ROWS - 1);
+        return {
+          startX: (A4_W_MM - gridW) / 2,
+          startY: (A4_H_MM - gridH) / 2,
+        };
+      };
 
       function verticalFullCrop(img) {
-        let h = img.height;
-        let w = h * CARD_ASPECT;
-
+        let h = img.height,
+          w = h * CARD_ASPECT;
         if (w > img.width) {
           w = img.width;
           h = w / CARD_ASPECT;
         }
-
-        return {
-          x: (img.width - w) / 2,
-          y: (img.height - h) / 2,
-          w, h
-        };
+        return { x: (img.width - w) / 2, y: (img.height - h) / 2, w, h };
       }
 
-      function loadFile(file) {
-        if (!file || !file.type.startsWith('image/')) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          const img = new Image();
-          img.onload = () => {
-            item = { file, img, crop: verticalFullCrop(img) };
+      function readImage(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = reject;
+          reader.onload = () => {
+            const img = new Image();
+            img.onerror = reject;
+            img.onload = () =>
+              resolve({
+                file,
+                img,
+                src: reader.result,
+                crop: verticalFullCrop(img),
+                count: 1,
+              });
+            img.src = reader.result;
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      async function loadFiles(fileList) {
+        const imageFiles = Array.from(fileList).filter((file) =>
+          file.type.startsWith("image/"),
+        );
+        const available = MAX_CARDS - totalCount();
+        if (available <= 0) {
+          notice =
+            "印刷枚数が上限の9枚に達しています。枚数を減らすか、画像を削除してください。";
+          updateAll();
+          return;
+        }
+        const accepted = imageFiles.slice(0, available);
+        notice =
+          accepted.length < imageFiles.length
+            ? `上限9枚のため、先頭の${accepted.length}画像だけ追加しました。`
+            : "";
+        const loaded = await Promise.allSettled(accepted.map(readImage));
+        const newItems = loaded
+          .filter((result) => result.status === "fulfilled")
+          .map((result) => result.value);
+        items.push(...newItems);
+        if (selectedIndex < 0 && items.length) selectedIndex = 0;
+        if (newItems.length < accepted.length)
+          notice = "読み込めなかった画像があります。";
+        updateAll();
+      }
+
+      function createButton(text, label, onClick) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = text;
+        button.setAttribute("aria-label", label);
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          onClick();
+        });
+        return button;
+      }
+
+      function renderImageList() {
+        imageList.replaceChildren();
+        items.forEach((item, index) => {
+          const row = document.createElement("div");
+          row.className =
+            "imageItem" + (index === selectedIndex ? " selected" : "");
+          row.tabIndex = 0;
+          row.setAttribute("role", "button");
+          row.setAttribute("aria-label", `${item.file.name}を選択`);
+          const select = () => {
+            selectedIndex = index;
             updateAll();
           };
-          img.src = reader.result;
-        };
-        reader.readAsDataURL(file);
+          row.addEventListener("click", select);
+          row.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              select();
+            }
+          });
+          const thumbnail = document.createElement("img");
+          thumbnail.className = "thumbnail";
+          thumbnail.src = item.src;
+          thumbnail.alt = "";
+          const name = document.createElement("div");
+          name.className = "imageName";
+          name.textContent = item.file.name;
+          name.title = item.file.name;
+          const stepper = document.createElement("div");
+          stepper.className = "stepper";
+          const decrease = createButton(
+            "<",
+            `${item.file.name}の印刷枚数を1枚減らす`,
+            () => adjustCount(index, -1),
+          );
+          decrease.disabled = item.count <= 1;
+          const count = document.createElement("span");
+          count.textContent = item.count;
+          count.setAttribute("aria-label", `${item.count}枚`);
+          const increase = createButton(
+            ">",
+            `${item.file.name}の印刷枚数を1枚増やす`,
+            () => adjustCount(index, 1),
+          );
+          increase.disabled = totalCount() >= MAX_CARDS;
+          stepper.append(decrease, count, increase);
+          const remove = createButton("×", `${item.file.name}を削除`, () =>
+            removeItem(index),
+          );
+          remove.className = "removeButton";
+          row.append(thumbnail, name, stepper, remove);
+          imageList.append(row);
+        });
+      }
+
+      function adjustCount(index, amount) {
+        const item = items[index];
+        if (!item || (amount < 0 && item.count <= 1)) return;
+        if (amount > 0 && totalCount() >= MAX_CARDS) {
+          notice = "印刷できるのは合計9枚までです。";
+          updateAll();
+          return;
+        }
+        item.count += amount;
+        notice = "";
+        updateAll();
+      }
+
+      function removeItem(index) {
+        items.splice(index, 1);
+        if (!items.length) selectedIndex = -1;
+        else if (selectedIndex > index) selectedIndex--;
+        else if (selectedIndex === index)
+          selectedIndex = Math.min(index, items.length - 1);
+        notice = "";
+        updateAll();
       }
 
       function drawCropPreview() {
         cropCtx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
-        cropCtx.fillStyle = '#0b0d11';
+        cropCtx.fillStyle = "#0b0d11";
         cropCtx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
-
+        const item = selectedItem();
         if (!item) {
-          cropCtx.fillStyle = '#7f8897';
-          cropCtx.textAlign = 'center';
-          cropCtx.font = '22px system-ui';
-          cropCtx.fillText('切り抜きプレビュー', cropCanvas.width / 2, cropCanvas.height / 2);
+          cropCtx.fillStyle = "#7f8897";
+          cropCtx.textAlign = "center";
+          cropCtx.font = "22px system-ui";
+          cropCtx.fillText(
+            "切り抜きプレビュー",
+            cropCanvas.width / 2,
+            cropCanvas.height / 2,
+          );
           return;
         }
-
-        const img = item.img;
-        const crop = item.crop;
-
-        const pad = 24;
-        const scale = Math.min(
-          (cropCanvas.width - pad * 2) / img.width,
-          (cropCanvas.height - pad * 2) / img.height
-        );
-        const dw = img.width * scale;
-        const dh = img.height * scale;
-        const ox = (cropCanvas.width - dw) / 2;
-        const oy = (cropCanvas.height - dh) / 2;
-
+        const { img, crop } = item,
+          pad = 24,
+          scale = Math.min(
+            (cropCanvas.width - pad * 2) / img.width,
+            (cropCanvas.height - pad * 2) / img.height,
+          );
+        const dw = img.width * scale,
+          dh = img.height * scale,
+          ox = (cropCanvas.width - dw) / 2,
+          oy = (cropCanvas.height - dh) / 2;
+        const rx = ox + crop.x * scale,
+          ry = oy + crop.y * scale,
+          rw = crop.w * scale,
+          rh = crop.h * scale;
         cropCtx.drawImage(img, ox, oy, dw, dh);
-
-        const rx = ox + crop.x * scale;
-        const ry = oy + crop.y * scale;
-        const rw = crop.w * scale;
-        const rh = crop.h * scale;
-
         cropCtx.save();
-        cropCtx.fillStyle = 'rgba(0,0,0,0.45)';
+        cropCtx.fillStyle = "rgba(0,0,0,.45)";
         cropCtx.fillRect(ox, oy, dw, dh);
         cropCtx.clearRect(rx, ry, rw, rh);
-        cropCtx.drawImage(img, crop.x, crop.y, crop.w, crop.h, rx, ry, rw, rh);
+        cropCtx.drawImage(
+          img,
+          crop.x,
+          crop.y,
+          crop.w,
+          crop.h,
+          rx,
+          ry,
+          rw,
+          rh,
+        );
         cropCtx.restore();
-
-        cropCtx.strokeStyle = '#63a8ff';
+        cropCtx.strokeStyle = "#63a8ff";
         cropCtx.lineWidth = 3;
         cropCtx.strokeRect(rx, ry, rw, rh);
       }
 
-      function getCroppedCanvas(outW = 900, outH = Math.round(900 / CARD_ASPECT)) {
-        const c = document.createElement('canvas');
-        c.width = outW;
-        c.height = outH;
-        const cx = c.getContext('2d');
-        cx.imageSmoothingEnabled = true;
-        cx.imageSmoothingQuality = 'high';
-
-        if (!item) return c;
-
-        cx.drawImage(
-          item.img,
-          item.crop.x, item.crop.y, item.crop.w, item.crop.h,
-          0, 0, outW, outH
-        );
-        return c;
+      function getCroppedCanvas(
+        item,
+        outW = 900,
+        outH = Math.round(900 / CARD_ASPECT),
+      ) {
+        const canvas = document.createElement("canvas");
+        canvas.width = outW;
+        canvas.height = outH;
+        const ctx = canvas.getContext("2d");
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        if (item)
+          ctx.drawImage(
+            item.img,
+            item.crop.x,
+            item.crop.y,
+            item.crop.w,
+            item.crop.h,
+            0,
+            0,
+            outW,
+            outH,
+          );
+        return canvas;
       }
 
-      function drawScaleOnCanvas(ctx) {
-        const x1 = mmToPx(SCALE_X_MM);
-        const x2 = mmToPx(SCALE_X_MM + SCALE_LEN_MM);
-        const y = mmToPx(SCALE_Y_MM);
-        const tick = mmToPx(SCALE_TICK_MM);
+      const getPrintItems = () =>
+        items.flatMap((item) =>
+          Array.from({ length: item.count }, () => item),
+        );
 
+      function drawScaleOnCanvas(ctx) {
+        const x1 = mmToPx(SCALE_X_MM),
+          x2 = mmToPx(SCALE_X_MM + SCALE_LEN_MM),
+          y = mmToPx(SCALE_Y_MM),
+          tick = mmToPx(SCALE_TICK_MM);
         ctx.save();
-        ctx.strokeStyle = '#000';
-        ctx.fillStyle = '#000';
+        ctx.strokeStyle = "#000";
+        ctx.fillStyle = "#000";
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(x1, y);
@@ -423,179 +664,201 @@
         ctx.moveTo(x2, y - tick);
         ctx.lineTo(x2, y + tick);
         ctx.stroke();
-
-        ctx.font = '28px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText('10 mm', (x1 + x2) / 2, y - tick - 8);
+        ctx.font = "28px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText("10 mm", (x1 + x2) / 2, y - tick - 8);
         ctx.restore();
       }
 
       function renderSheetCanvasFull() {
-        const layout = getLayout();
-        const sheet = document.createElement('canvas');
+        const layout = getLayout(),
+          sheet = document.createElement("canvas");
         sheet.width = A4_PX_W;
         sheet.height = A4_PX_H;
-        const sctx = sheet.getContext('2d');
-
-        sctx.fillStyle = '#ffffff';
-        sctx.fillRect(0, 0, sheet.width, sheet.height);
-
-        if (!item) return sheet;
-
-        sctx.imageSmoothingEnabled = true;
-        sctx.imageSmoothingQuality = 'high';
-
-        const cardPxW = mmToPx(CARD_W_MM);
-        const cardPxH = mmToPx(CARD_H_MM);
-        const gapPxX = mmToPx(GAP_X_MM);
-        const gapPxY = mmToPx(GAP_Y_MM);
-        const startPxX = Math.round(layout.startX * PX_PER_MM);
-        const startPxY = Math.round(layout.startY * PX_PER_MM);
-
-        const cropped = getCroppedCanvas(cardPxW, cardPxH);
-
-        for (let row = 0; row < ROWS; row++) {
-          for (let col = 0; col < COLS; col++) {
-            const x = startPxX + col * (cardPxW + gapPxX);
-            const y = startPxY + row * (cardPxH + gapPxY);
-            sctx.drawImage(cropped, x, y);
-
-            sctx.strokeStyle = 'rgba(160,160,160,0.85)';
-            sctx.lineWidth = 1;
-            sctx.strokeRect(x + 0.5, y + 0.5, cardPxW - 1, cardPxH - 1);
-          }
-        }
-
-        drawScaleOnCanvas(sctx);
+        const ctx = sheet.getContext("2d");
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, sheet.width, sheet.height);
+        const printItems = getPrintItems();
+        if (!printItems.length) return sheet;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        const cardPxW = mmToPx(CARD_W_MM),
+          cardPxH = mmToPx(CARD_H_MM),
+          gapPxX = mmToPx(GAP_X_MM),
+          gapPxY = mmToPx(GAP_Y_MM),
+          startPxX = Math.round(layout.startX * PX_PER_MM),
+          startPxY = Math.round(layout.startY * PX_PER_MM);
+        printItems.forEach((item, index) => {
+          const row = Math.floor(index / COLS),
+            col = index % COLS,
+            x = startPxX + col * (cardPxW + gapPxX),
+            y = startPxY + row * (cardPxH + gapPxY);
+          ctx.drawImage(getCroppedCanvas(item, cardPxW, cardPxH), x, y);
+          ctx.strokeStyle = "rgba(160,160,160,.85)";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x + 0.5, y + 0.5, cardPxW - 1, cardPxH - 1);
+        });
+        drawScaleOnCanvas(ctx);
         return sheet;
       }
 
       function drawSheetPreview() {
         sheetCtx.clearRect(0, 0, sheetCanvas.width, sheetCanvas.height);
-        sheetCtx.fillStyle = '#0b0d11';
+        sheetCtx.fillStyle = "#0b0d11";
         sheetCtx.fillRect(0, 0, sheetCanvas.width, sheetCanvas.height);
-
-        if (!item) {
-          sheetCtx.fillStyle = '#7f8897';
-          sheetCtx.textAlign = 'center';
-          sheetCtx.font = '22px system-ui';
-          sheetCtx.fillText('A4シートプレビュー', sheetCanvas.width / 2, sheetCanvas.height / 2);
+        if (!items.length) {
+          sheetCtx.fillStyle = "#7f8897";
+          sheetCtx.textAlign = "center";
+          sheetCtx.font = "22px system-ui";
+          sheetCtx.fillText(
+            "A4シートプレビュー",
+            sheetCanvas.width / 2,
+            sheetCanvas.height / 2,
+          );
           return;
         }
-
-        const full = renderSheetCanvasFull();
         sheetCtx.imageSmoothingEnabled = true;
-        sheetCtx.imageSmoothingQuality = 'high';
-        sheetCtx.drawImage(full, 0, 0, sheetCanvas.width, sheetCanvas.height);
+        sheetCtx.imageSmoothingQuality = "high";
+        sheetCtx.drawImage(
+          renderSheetCanvasFull(),
+          0,
+          0,
+          sheetCanvas.width,
+          sheetCanvas.height,
+        );
       }
 
       function updateStatus() {
-        if (!item) {
-          status.textContent = '画像を1枚アップロードしてね。';
-          generatePng.disabled = true;
-          generatePdf.disabled = true;
-          downloadCrop.disabled = true;
+        const hasItems = items.length > 0;
+        generatePng.disabled = !hasItems;
+        generatePdf.disabled = !hasItems;
+        downloadCrop.disabled = !selectedItem();
+        if (!hasItems) {
+          status.textContent = notice || "デバッグメニュー";
           return;
         }
-
-        const crop = item.crop;
-        status.textContent =
-          `読み込み済み: ${item.file.name}
-元画像: ${item.img.width} × ${item.img.height}px
-切り抜き: ${Math.round(crop.w)} × ${Math.round(crop.h)}px
-出力: A4 / 3×3 / gap 1mm / 10mm確認線つき`;
-        generatePng.disabled = false;
-        generatePdf.disabled = false;
-        downloadCrop.disabled = false;
+        const selected = selectedItem(),
+          lines = [
+            `デバッグメニュー`,
+            `画像: ${items.length}点 / 印刷: ${totalCount()}枚（上限9枚）`,
+            `選択中: ${selected.file.name}`,
+            `元画像: ${selected.img.width} × ${selected.img.height}px`,
+            "出力: A4 / 最大3×3 / gap 1mm / 10mm確認線つき",
+          ];
+        if (notice) lines.unshift(notice);
+        status.textContent = lines.join("\n");
       }
 
       function updateAll() {
+        renderImageList();
         updateStatus();
         drawCropPreview();
         drawSheetPreview();
       }
 
-      generatePng.addEventListener('click', () => {
-        if (!item) return;
-        const sheet = renderSheetCanvasFull();
-        const a = document.createElement('a');
-        a.href = sheet.toDataURL('image/png');
-        a.download = 'vrc-card-a4-sheet.png';
-        a.click();
+      generatePng.addEventListener("click", () => {
+        if (!items.length) return;
+        const link = document.createElement("a");
+        link.href = renderSheetCanvasFull().toDataURL("image/png");
+        link.download = "vrc-card-a4-sheet.png";
+        link.click();
       });
-
-      generatePdf.addEventListener('click', () => {
-        if (!item) return;
+      generatePdf.addEventListener("click", () => {
+        if (!items.length) return;
         if (!window.jspdf) {
-          alert('PDFライブラリを読み込めなかったよ。ネット接続を確認してね。');
+          alert(
+            "PDFライブラリを読み込めませんでした。ネット接続を確認してください。",
+          );
           return;
         }
-
-        const layout = getLayout();
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-        const data = getCroppedCanvas(900, Math.round(900 / CARD_ASPECT)).toDataURL('image/png');
-
-        for (let row = 0; row < ROWS; row++) {
-          for (let col = 0; col < COLS; col++) {
-            const x = layout.startX + col * (CARD_W_MM + GAP_X_MM);
-            const y = layout.startY + row * (CARD_H_MM + GAP_Y_MM);
-            pdf.addImage(data, 'PNG', x, y, CARD_W_MM, CARD_H_MM, undefined, 'FAST');
-
-            pdf.setDrawColor(170, 170, 170);
-            pdf.setLineWidth(0.1);
-            pdf.rect(x, y, CARD_W_MM, CARD_H_MM);
-          }
-        }
-
+        const layout = getLayout(),
+          { jsPDF } = window.jspdf,
+          pdf = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "a4",
+          });
+        getPrintItems().forEach((item, index) => {
+          const row = Math.floor(index / COLS),
+            col = index % COLS,
+            x = layout.startX + col * (CARD_W_MM + GAP_X_MM),
+            y = layout.startY + row * (CARD_H_MM + GAP_Y_MM),
+            data = getCroppedCanvas(item).toDataURL("image/png");
+          pdf.addImage(
+            data,
+            "PNG",
+            x,
+            y,
+            CARD_W_MM,
+            CARD_H_MM,
+            undefined,
+            "FAST",
+          );
+          pdf.setDrawColor(170, 170, 170);
+          pdf.setLineWidth(0.1);
+          pdf.rect(x, y, CARD_W_MM, CARD_H_MM);
+        });
         pdf.setDrawColor(0, 0, 0);
         pdf.setTextColor(0, 0, 0);
         pdf.setLineWidth(0.35);
-        pdf.line(SCALE_X_MM, SCALE_Y_MM, SCALE_X_MM + SCALE_LEN_MM, SCALE_Y_MM);
-        pdf.line(SCALE_X_MM, SCALE_Y_MM - SCALE_TICK_MM, SCALE_X_MM, SCALE_Y_MM + SCALE_TICK_MM);
-        pdf.line(SCALE_X_MM + SCALE_LEN_MM, SCALE_Y_MM - SCALE_TICK_MM, SCALE_X_MM + SCALE_LEN_MM, SCALE_Y_MM + SCALE_TICK_MM);
+        pdf.line(
+          SCALE_X_MM,
+          SCALE_Y_MM,
+          SCALE_X_MM + SCALE_LEN_MM,
+          SCALE_Y_MM,
+        );
+        pdf.line(
+          SCALE_X_MM,
+          SCALE_Y_MM - SCALE_TICK_MM,
+          SCALE_X_MM,
+          SCALE_Y_MM + SCALE_TICK_MM,
+        );
+        pdf.line(
+          SCALE_X_MM + SCALE_LEN_MM,
+          SCALE_Y_MM - SCALE_TICK_MM,
+          SCALE_X_MM + SCALE_LEN_MM,
+          SCALE_Y_MM + SCALE_TICK_MM,
+        );
         pdf.setFontSize(10);
-        pdf.text('10 mm', SCALE_X_MM + SCALE_LEN_MM / 2, SCALE_Y_MM - 2.5, { align: 'center' });
-
-        pdf.save('vrc-card-a4-sheet.pdf');
+        pdf.text("10 mm", SCALE_X_MM + SCALE_LEN_MM / 2, SCALE_Y_MM - 2.5, {
+          align: "center",
+        });
+        pdf.save("vrc-card-a4-sheet.pdf");
       });
-
-      downloadCrop.addEventListener('click', () => {
+      downloadCrop.addEventListener("click", () => {
+        const item = selectedItem();
         if (!item) return;
-        const c = getCroppedCanvas(1500, Math.round(1500 / CARD_ASPECT));
-        const a = document.createElement('a');
-        a.href = c.toDataURL('image/png');
-        a.download = (item.file.name.replace(/\.[^.]+$/, '') || 'card') + '_crop.png';
-        a.click();
+        const link = document.createElement("a");
+        link.href = getCroppedCanvas(
+          item,
+          1500,
+          Math.round(1500 / CARD_ASPECT),
+        ).toDataURL("image/png");
+        link.download =
+          (item.file.name.replace(/\.[^.]+$/, "") || "card") + "_crop.png";
+        link.click();
       });
-
-      drop.addEventListener('click', () => fileInput.click());
-      fileInput.addEventListener('change', () => {
-        const file = fileInput.files[0];
-        if (file) loadFile(file);
+      drop.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", () => {
+        loadFiles(fileInput.files);
+        fileInput.value = "";
       });
-
-      ['dragenter', 'dragover'].forEach(type => {
-        drop.addEventListener(type, e => {
-          e.preventDefault();
-          drop.classList.add('drag');
-        });
-      });
-
-      ['dragleave', 'drop'].forEach(type => {
-        drop.addEventListener(type, e => {
-          e.preventDefault();
-          drop.classList.remove('drag');
-        });
-      });
-
-      drop.addEventListener('drop', e => {
-        const file = e.dataTransfer.files[0];
-        if (file) loadFile(file);
-      });
-
+      ["dragenter", "dragover"].forEach((type) =>
+        drop.addEventListener(type, (event) => {
+          event.preventDefault();
+          drop.classList.add("drag");
+        }),
+      );
+      ["dragleave", "drop"].forEach((type) =>
+        drop.addEventListener(type, (event) => {
+          event.preventDefault();
+          drop.classList.remove("drag");
+        }),
+      );
+      drop.addEventListener("drop", (event) =>
+        loadFiles(event.dataTransfer.files),
+      );
       updateAll();
     })();
   </script>
