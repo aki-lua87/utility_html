@@ -44,7 +44,8 @@ async function main() {
       const callback = new URL(route.request().url()).searchParams.get('callback');
       // Deliberately omit Access-Control-Allow-Origin: transport must work without CORS.
       await route.fulfill({contentType: 'text/javascript', body: callback + '(' + JSON.stringify({version: 1,
-        lures: [{id: '1', name: 'テストミノー 11g / 青', weight: 11, color: '青', state: '良好', maker: 'メーカー'}],
+        lures: [{id: '1', name: 'テストミノー 11g / 青', weight: 11, color: '青', state: 'あり', maker: 'メーカー'},
+          {id: '2', name: '未所持ミノー', weight: 11, color: '赤', state: 'なし', maker: 'メーカー'}],
         reels: [{id: 'REEL-01', name: 'エクスセンス BB C3000MHG', rate: 89, basis: 'メーカー公称'},
           {id: 'REEL-02', name: 'P Prospec C3000SDH', rate: 75, basis: '暫定推定（未実測）'}]
       }) + ');'});
@@ -73,6 +74,7 @@ async function main() {
     await page.locator('#master-url').fill('https://script.google.com/macros/s/browser-test/exec');
     await page.locator('#master-connect').click();
     await page.waitForFunction(() => document.getElementById('master-status').textContent.startsWith('更新済み'));
+    assert.equal(await page.locator('#lure option[value="master:2"]').count(), 0);
     await page.locator('summary').click();
     await page.locator('#lure').selectOption('master:1');
     await page.locator('#gear').selectOption('master:REEL-02');
@@ -112,7 +114,7 @@ async function main() {
     assert.equal(await page.locator('#estimate').textContent(), '40.1 m');
     await page.screenshot({path: path.join(output, 'mobile-offline.png'), fullPage: true});
     assert.deepEqual(errors, []);
-    console.log('PASS: v2→v3 SW update, history preservation, mobile JSONP without CORS, custom registration, CSV, offline reload/calculation.');
+    console.log('PASS: v2→v4 SW update, owned-only lures, history preservation, mobile JSONP without CORS, custom registration, CSV, offline reload/calculation.');
     console.log('Screenshots: ' + output);
     await context.close();
   } finally { await browser.close(); }

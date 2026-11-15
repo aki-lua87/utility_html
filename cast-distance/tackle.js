@@ -26,8 +26,9 @@ window.CastTackle = {
       const select = $(type === 'lures' ? 'lure' : 'gear');
       const names = new Set(data[type].map(item => normalized(item.name)));
       lists[type] = [...data[type], ...customs[type].filter(item => !names.has(normalized(item.name)))];
-      // An in-progress or previous selection survives a master removal/rename.
-      if (previous && typeof previous.name === 'string' && !lists[type].some(item => matches(item, previous))) {
+      // Reels can retain a removed selection. Lures must belong to the current
+      // owned master or local custom list; never resurrect a previous master row.
+      if (type === 'reels' && previous && typeof previous.name === 'string' && !lists[type].some(item => matches(item, previous))) {
         lists[type].push({...previous, unavailable: true});
       }
       select.replaceChildren();

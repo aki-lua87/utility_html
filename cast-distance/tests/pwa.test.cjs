@@ -11,8 +11,8 @@ const scripts = [...html.matchAll(/<script(?: src="\.\/([^"]+)")?>([\s\S]*?)<\/s
 const HISTORY='fishing-distance-log-v1',CACHE='cast-distance-master-v1',ENDPOINT='cast-distance-master-endpoint-v1';
 const endpoint='https://script.google.com/macros/s/test-deployment/exec';
 const fixture=()=>({version:1,lures:[
-  {id:'1',name:'ミノー 11g / 青',weight:11,color:'青',state:'良好',maker:'メーカー'},
-  {id:'2',name:'ミノー 11g / 赤',weight:11,color:'赤',state:'新品',maker:'メーカー'}
+  {id:'1',name:'ミノー 11g / 青',weight:11,color:'青',state:'あり',maker:'メーカー'},
+  {id:'2',name:'ミノー 11g / 赤',weight:11,color:'赤',state:'あり',maker:'メーカー'}
 ],reels:[{id:'REEL-01',name:'エクスセンス BB C3000MHG',rate:89,basis:'メーカー公称'},
   {id:'REEL-02',name:'P Prospec C3000SDH',rate:75,basis:'暫定推定（未実測）'}]});
 
@@ -63,9 +63,9 @@ test('45 turns at 89 cm estimates 40.1 m; correction and bounds',()=>{
 });
 
 test('save, reload, group averages and CSV quoting',async()=>{
-  const a=app();a.input('turns','45');a.get('memo').value='風,"弱い"\n2行';a.get('save').click();
+  const a=app();a.input('custom-lure','NOYD 16g');a.input('turns','45');a.get('memo').value='風,"弱い"\n2行';a.get('save').click();
   a.input('turns','50');a.get('save').click();
-  a.input('turns','20');a.change('lure','initial:X-80SW');a.get('save').click();
+  a.input('turns','20');a.change('lure','custom');a.input('custom-lure','X-80SW');a.get('save').click();
   assert.equal(a.get('count').textContent,3);assert.equal(a.get('average').textContent,'34.1');
   assert.equal(a.get('best').textContent,'44.5');assert.equal(a.get('groups').children.length,2);
   const b=app(a.stored());assert.equal(b.get('count').textContent,3);
@@ -79,7 +79,7 @@ test('save, reload, group averages and CSV quoting',async()=>{
 });
 
 test('failed writes never alter saved or displayed history',()=>{
-  const a=app();a.input('turns','45');a.get('save').click();const before=a.stored();
+  const a=app();a.input('custom-lure','NOYD 16g');a.input('turns','45');a.get('save').click();const before=a.stored();
   a.fail();a.input('turns','70');a.get('save').click();
   assert.equal(a.stored(),before);assert.equal(a.get('count').textContent,1);
   a.get('entries').children[0].children.at(-1).children[0].click();
@@ -88,7 +88,7 @@ test('failed writes never alter saved or displayed history',()=>{
 });
 
 test('single deletion and clear persist',()=>{
-  const a=app();a.input('turns','45');a.get('save').click();a.input('turns','50');a.get('save').click();
+  const a=app();a.input('custom-lure','NOYD 16g');a.input('turns','45');a.get('save').click();a.input('turns','50');a.get('save').click();
   a.get('entries').children[0].children.at(-1).children[0].click();
   assert.equal(JSON.parse(a.stored()).length,1);assert.equal(a.get('best').textContent,'40.1');
   a.get('clear').click();assert.equal(a.stored(),'[]');assert.equal(a.get('count').textContent,0);
@@ -108,7 +108,7 @@ test('manifest resolves within GitHub Pages subpath; icons are real PNGs',()=>{
 
 test('service worker caches all launch assets, isolates cleanup, starts offline',async()=>{
   const scope='https://aki-lua87.github.io/utility_html/cast-distance/';
-  const prefix=`cast-distance:${scope}:`,cacheName=prefix+'v3';
+  const prefix=`cast-distance:${scope}:`,cacheName=prefix+'v4';
   const stores=new Map([['other-app-v1',new Map()],[prefix+'v1',new Map()],['cast-distance:https://example.com/:v1',new Map()]]);
   const events={};let network=false,claimed=false;
   const caches={keys:async()=>[...stores.keys()],delete:async key=>stores.delete(key),open:async key=>{
@@ -176,7 +176,7 @@ test('first launch failure, timeout and a late response retain usable initial da
     assert.match(a.get('master-status').textContent,/初期マスター使用中.*更新に失敗/);
     a.respond(fixture());await settle();assert.equal(a.storage.has(CACHE),false);
     a.change('gear','initial:REEL-02');assert.equal(a.get('rate').value,'75');
-    a.input('turns','45');a.get('save').click();assert.equal(JSON.parse(a.stored())[0].distance,33.8);
+    a.input('custom-lure','所持ルアー');a.input('turns','45');a.get('save').click();assert.equal(JSON.parse(a.stored())[0].distance,33.8);
     a.get('master-refresh').click();a.respond(fixture());await settle();
     assert.match(a.get('master-status').textContent,/更新済み/);
   }
@@ -234,15 +234,15 @@ test('master arriving later hides duplicate local names and preserves their hist
   assert.equal(a.stored(),before);
 });
 
-test('master removal or a name reused with a different ID cannot rewrite history or selection',async()=>{
+test('removed master lures leave the dropdown even when selected; history is unchanged',async()=>{
   const a=app(null,{[ENDPOINT]:JSON.stringify(endpoint)});a.respond(fixture());await settle();
   a.change('lure','master:1');a.input('turns','45');a.get('save').click();const before=a.stored();
   const changed=fixture();changed.lures[0].id='3';
   a.get('master-refresh').click();a.respond(changed);await settle();
-  assert.equal(a.get('lure').value,'master:1');assert.equal(a.stored(),before);
-  assert.match(a.get('lure').children.find(option=>option.value==='master:1').textContent,/前回の選択/);
+  assert.equal(a.get('lure').value,'master:3');assert.equal(a.stored(),before);
+  assert.equal(a.get('lure').children.some(option=>option.value==='master:1'),false);
   const b=app(null,Object.fromEntries(a.storage));b.networkError();await settle();
-  assert.equal(b.get('lure').value,'master:1');assert.equal(b.stored(),before);
+  assert.equal(b.get('lure').value,'master:3');assert.equal(b.stored(),before);
 });
 
 test('a refreshed rate follows the master until manually overridden; in-flight input survives',async()=>{
@@ -281,14 +281,16 @@ test('storage failure keeps online data usable, and never overwrites existing hi
   assert.equal(a.stored(),before);assert.equal(a.get('count').textContent,1);
 });
 
-test('lost/discarded rows are excluded; equal display names retain distinct IDs, weight and color',async()=>{
+test('only owned rows are selectable; equal display names retain distinct IDs, weight and color',async()=>{
   const data=fixture();data.lures[1].name=data.lures[0].name;data.lures[1].weight=20;
-  data.lures.push({...data.lures[0],id:'lost',state:'ロスト'},{...data.lures[0],id:'discard',state:'廃棄'});
+  for(const [id,state] of [['absent','なし'],['lost','ロスト'],['discard','廃棄'],['legacy','良好'],['blank','']]) {
+    data.lures.push({...data.lures[0],id,state});
+  }
   const a=app(null,{[ENDPOINT]:JSON.stringify(endpoint)});a.respond(data);await settle();
   const options=a.get('lure').children;
   assert.match(options.find(option=>option.value==='master:1').textContent,/11g \/ 青 \/ ID:1/);
   assert.match(options.find(option=>option.value==='master:2').textContent,/20g \/ 赤 \/ ID:2/);
-  assert.equal(options.some(option=>option.value==='master:lost'||option.value==='master:discard'),false);
+  assert.deepEqual(options.filter(option=>option.value.startsWith('master:')).map(option=>option.value),['master:1','master:2']);
   for(const id of ['1','2']) {a.change('lure','master:'+id);a.input('turns','45');a.get('save').click();}
   assert.equal(a.get('groups').children.length,2);
   assert.match(a.get('entries').children[0].children[0].children[0].textContent,/20g \/ 赤 \/ ID:2/);
@@ -301,6 +303,44 @@ test('empty master lists permit custom-only use and never discard existing histo
   assert.equal(JSON.parse(a.stored())[0].distance,40.1);
 });
 
+test('unverified preset lures and old initial selections are not offered before the first fetch',()=>{
+  const a=app(null,{'cast-distance-selection-v1':JSON.stringify({
+    lure:{id:null,name:'NOYD 16g',source:'initial',state:''}
+  })});
+  assert.deepEqual(a.get('lure').children.map(option=>option.value),['custom']);
+  assert.equal(a.get('lure').value,'custom');
+  a.input('turns','45');a.get('save').click();assert.equal(a.stored(),null);
+});
+
+test('cached non-owned and legacy states cannot reappear through previous selections while offline',async()=>{
+  for(const state of ['なし','良好','新品','ロスト','廃棄','']) {
+    const data=fixture();data.lures[0].state=state;
+    const cached=JSON.stringify({data,at:'2026-11-01T00:00:00Z'});
+    const a=app(null,{[CACHE]:cached,[ENDPOINT]:JSON.stringify(endpoint),
+      'cast-distance-selection-v1':JSON.stringify({lure:{...fixture().lures[0],source:'master'}})});
+    a.networkError();await settle();
+    assert.equal(a.get('lure').value,'master:2');
+    assert.equal(a.get('lure').children.some(option=>option.value==='master:1'),false);
+    // Filtering the cache in memory must not alter saved history or delete local data.
+    assert.equal(a.stored(),null);assert.equal(a.storage.get(CACHE),cached);
+  }
+});
+
+test('an owned lure becoming unavailable leaves current and offline dropdowns, preserving its history',async()=>{
+  const a=app(null,{[ENDPOINT]:JSON.stringify(endpoint)});a.respond(fixture());await settle();
+  a.change('lure','master:1');a.input('turns','45');a.get('save').click();const before=a.stored();
+  const changed=fixture();changed.lures[0].state='なし';
+  a.get('master-refresh').click();a.respond(changed);await settle();
+  assert.equal(a.get('lure').value,'master:2');assert.equal(a.stored(),before);
+  assert.equal(a.get('lure').children.some(option=>option.value==='master:1'),false);
+  assert.deepEqual(JSON.parse(a.storage.get(CACHE)).data.lures.map(item=>item.id),['2']);
+  const b=app(null,Object.fromEntries(a.storage));b.networkError();await settle();
+  assert.equal(b.get('lure').value,'master:2');assert.equal(b.stored(),before);
+  b.get('master-refresh').click();b.respond({version:1,lures:[],reels:fixture().reels});await settle();
+  assert.deepEqual(b.get('lure').children.map(option=>option.value),['custom']);
+  assert.equal(b.stored(),before);
+});
+
 test('only trusted Apps Script deployment URLs can be configured',()=>{
   for(const url of ['javascript:alert(1)','https://evil.example/exec',endpoint+'?callback=evil','http://script.google.com/macros/s/test/exec']) {
     const a=app();a.get('master-url').value=url;a.get('master-connect').click();
@@ -310,11 +350,11 @@ test('only trusted Apps Script deployment URLs can be configured',()=>{
   assert.equal(JSON.parse(a.storage.get(ENDPOINT)),endpoint);assert.equal(a.document.head.children.length,1);
 });
 
-test('Apps Script reads only approved master ranges, preserves IDs, filters lost rows and validates JSONP',()=>{
+test('Apps Script reads only approved master ranges, preserves IDs, filters unowned rows and validates JSONP',()=>{
   const calls=[],data=fixture();
   const source=fs.readFileSync(path.join(root,'apps-script/Code.gs'),'utf8');
   const lureRows=data.lures.map(row=>[Number(row.id),row.name,row.weight,row.color,row.state,row.maker]);
-  lureRows.push([3,'ロスト済み',30,'青','ロスト','メーカー'],['','','','','','']);
+  lureRows.push([3,'未所持',30,'青','なし','メーカー'],[4,'旧状態',30,'青','良好','メーカー'],['','','','','','']);
   const reelRows=data.reels.map(row=>[row.id,row.name,row.rate,row.basis]);
   const context=vm.createContext({Sheets:{Spreadsheets:{Values:{batchGet:(id,options)=>{
     calls.push(JSON.parse(JSON.stringify({id,...options})));

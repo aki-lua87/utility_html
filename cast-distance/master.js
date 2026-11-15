@@ -5,9 +5,8 @@ window.CastMaster = (() => {
   const endpointKey = 'cast-distance-master-endpoint-v1';
   const initial = {
     version: 1,
-    lures: ['NOYD 16g', 'NOYD 30g', '冷音 14g', '冷音 24g', 'X-80SW',
-      'スイッチヒッター65S', 'ジェット天秤＋イソメ'].map(name =>
-      ({id: null, name, weight: null, color: '', state: '', maker: '', source: 'initial'})),
+    // Ownership is unknown before the first download; offer custom entry only.
+    lures: [],
     reels: [
       {id: 'REEL-01', name: 'エクスセンスBB C3000MHG', rate: 89, basis: 'メーカー公称', source: 'initial'},
       {id: 'REEL-02', name: 'SEASIR P Prospec C3000SDH', rate: 75, basis: '暫定推定（未実測）', source: 'initial'}
@@ -39,7 +38,7 @@ window.CastMaster = (() => {
         }
         if (typeof item.rate !== 'number' || !Number.isFinite(item.rate) || item.rate < 1 || item.rate > 150) throw Error('Invalid rate');
         return {id, name, rate: item.rate, basis: text(item.basis, true), source: 'master'};
-      }).filter(item => !['ロスト', '廃棄'].includes(item.state));
+      }).filter(item => type !== 'lure' || item.state === 'あり');
     }
     return {version: 1, lures: rows(data.lures, 'lure'), reels: rows(data.reels, 'reel')};
   }

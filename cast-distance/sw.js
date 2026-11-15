@@ -2,7 +2,7 @@
 
 // Cache Storage is shared by every app on this origin. Only touch our scope.
 const PREFIX = `cast-distance:${self.registration.scope}:`;
-const CACHE = `${PREFIX}v3`;
+const CACHE = `${PREFIX}v4`;
 const FILES = ['./', './index.html', './master-config.js', './master.js', './tackle.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 const asset = path => new URL(path, self.registration.scope).href;
 

@@ -26,7 +26,8 @@ function doGet(e) {
       if (!valueId || valueId.startsWith('#')) throw new Error('Invalid ID');
       return valueId;
     };
-    const lures = lureRows.filter(row => row.some(value => str(value)) && !['ロスト', '廃棄'].includes(str(row[4])))
+    // The sheet already extracts owned lures; enforce the same rule defensively.
+    const lures = lureRows.filter(row => str(row[4]) === 'あり')
       .map(row => {
         const weight = str(row[2]) === '' ? null : Number(row[2]);
         if (!str(row[1]) || str(row[1]).startsWith('#') || (weight !== null && (!Number.isFinite(weight) || weight < 0))) throw new Error('Invalid lure');
